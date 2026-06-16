@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERRA — Expediciones Visuales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:    #080808;
+  --paper:  #F2EDE4;
+  --amber:  #C9A96E;
+  --muted:  rgba(242,237,228,0.55);
+  --faint:  rgba(242,237,228,0.08);
+}
+
+html { font-size: 16px; }
+
+body {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── grain texture ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px;
+}
+
+/* ── scroll progress ── */
+#prog {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  width: 0%;
+  background: var(--amber);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* ── custom cursor ── */
+#c-dot {
+  width: 6px; height: 6px;
+  background: var(--amber);
+  border-radius: 50%;
+  position: fixed;
+  z-index: 9998;
+  pointer-events: none;
+  top: 0; left: 0;
+  transform: translate(-50%,-50%);
+}
+
+#c-ring {
+  width: 30px; height: 30px;
+  border: 1px solid rgba(201,169,110,0.55);
+  border-radius: 50%;
+  position: fixed;
+  z-index: 9997;
+  pointer-events: none;
+  top: 0; left: 0;
+  transform: translate(-50%,-50%);
+}
+
+/* ── navigation ── */
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  padding: 1.75rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.4s, backdrop-filter 0.4s;
+}
+
+.nav-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2.5rem;
+  list-style: none;
+}
+
+.nav-links a {
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.nav-links a:hover { color: var(--amber); }
+
+/* ── HERO ── */
+.hero {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: -30px;
+  background-image: url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=2000&q=80');
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+}
+
+.hero-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(8,8,8,0.15) 0%,
+    rgba(8,8,8,0.02) 40%,
+    rgba(8,8,8,0.78) 100%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.hero-eyebrow {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 1.5rem;
+}
+
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(6rem, 22vw, 19rem);
+  font-weight: 300;
+  line-height: 0.85;
+  letter-spacing: -0.01em;
+}
+
+.hero-title em { font-style: italic; color: var(--amber); }
+
+.hero-sub {
+  font-size: 0.74rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 2.5rem;
+}
+
+.scroll-ind {
+  position: absolute;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.scroll-ind span {
+  font-size: 0.6rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: rgba(242,237,228,0.4);
+}
+
+.scroll-line {
+  width: 1px;
+  height: 52px;
+  background: linear-gradient(to bottom, var(--amber), transparent);
+  animation: pulse 2.5s ease-in-out infinite;
+  transform-origin: top;
+}
+
+@keyframes pulse {
+  0%,100% { opacity:1; transform: scaleY(1); }
+  50% { opacity:0.25; transform: scaleY(0.45); }
+}
+
+/* ── INTRO ── */
+.intro {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 10rem 3rem;
+  text-align: center;
+}
+
+.section-label {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 2.5rem;
+}
+
+.intro-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.65rem, 2.8vw, 2.55rem);
+  font-weight: 300;
+  line-height: 1.65;
+  color: var(--paper);
+}
+
+.intro-text em { font-style: italic; color: var(--muted); }
+
+/* ── CHAPTER SECTIONS ── */
+/* Each spacer is 250vh; the sticky chapter stays pinned for 150vh of scroll */
+.chapter-spacer {
+  position: relative;
+  height: 250vh;
+}
+
+.sticky-ch {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Full-viewport image frame — clipped via GSAP */
+.img-frame {
+  position: absolute;
+  inset: 0;
+  will-change: clip-path;
+}
+
+.img-frame img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  will-change: transform;
+}
+
+/* Gradient overlay for text legibility */
+.img-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(8,8,8,0.88) 0%,
+    rgba(8,8,8,0.22) 42%,
+    transparent 68%
+  );
+  pointer-events: none;
+}
+
+/* Text block — positioned at bottom-left inside the visible clip area */
+.ch-text {
+  position: absolute;
+  bottom: 4.5rem;
+  left: 4.5rem;
+  z-index: 10;
+  will-change: opacity, transform;
+}
+
+.ch-num {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.44em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 0.9rem;
+}
+
+.ch-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 5.5vw, 4.4rem);
+  font-weight: 300;
+  line-height: 1.1;
+  margin-bottom: 1.1rem;
+}
+.ch-title em { font-style: italic; }
+
+.ch-desc {
+  font-size: 0.82rem;
+  font-weight: 300;
+  line-height: 1.9;
+  color: rgba(242,237,228,0.68);
+  max-width: 360px;
+}
+
+/* Thin amber rule between sections */
+.divider {
+  width: 1px;
+  height: 80px;
+  background: linear-gradient(to bottom, var(--amber), transparent);
+  margin: 0 auto;
+}
+
+/* ── STATS ── */
+.stats {
+  padding: 8rem 4rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3rem;
+  max-width: 1050px;
+  margin: 0 auto;
+  border-top: 1px solid var(--faint);
+}
+
+.stat { text-align: center; }
+
+.stat-n {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.8rem, 4.8vw, 4.5rem);
+  font-weight: 300;
+  color: var(--amber);
+  line-height: 1;
+}
+
+.stat-l {
+  font-size: 0.64rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(242,237,228,0.38);
+  margin-top: 0.9rem;
+}
+
+/* ── OUTRO ── */
+.outro {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.outro-bg {
+  position: absolute;
+  inset: -30px;
+  background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=2000&q=80');
+  background-size: cover;
+  background-position: center 30%;
+  will-change: transform;
+}
+
+.outro-overlay {
+  position: absolute; inset: 0;
+  background: rgba(8,8,8,0.62);
+}
+
+.outro-inner {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.outro-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(3rem, 9vw, 7.5rem);
+  font-weight: 300;
+  line-height: 1.05;
+  margin-bottom: 3rem;
+}
+.outro-title em { font-style: italic; }
+
+.cta {
+  display: inline-block;
+  padding: 0.9rem 3rem;
+  border: 1px solid var(--amber);
+  color: var(--amber);
+  font-size: 0.68rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background 0.4s, color 0.4s;
+}
+.cta:hover { background: var(--amber); color: var(--ink); }
+
+/* ── FOOTER ── */
+footer {
+  padding: 2.5rem 4rem;
+  border-top: 1px solid var(--faint);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+footer .f-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.38em;
+}
+
+footer p {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: rgba(242,237,228,0.28);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .nav { padding: 1.4rem 1.5rem; }
+  .nav-links { display: none; }
+  .ch-text { bottom: 3rem; left: 1.5rem; }
+  .ch-desc { max-width: 260px; }
+  .stats { grid-template-columns: 1fr; gap: 2rem; padding: 5rem 2rem; }
+  footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem; }
+  .intro { padding: 6rem 1.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="prog"></div>
+<div id="c-dot"></div>
+<div id="c-ring"></div>
+
+<!-- ══ NAVIGATION ══ -->
+<nav class="nav" id="main-nav">
+  <div class="nav-logo">Terra</div>
+  <ul class="nav-links">
+    <li><a href="#">Expediciones</a></li>
+    <li><a href="#">Fotógrafos</a></li>
+    <li><a href="#">Archivo</a></li>
+    <li><a href="#">Contacto</a></li>
+  </ul>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="hero-bg" id="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <span class="hero-eyebrow" id="h-ey">Expediciones visuales del mundo natural</span>
+    <h1 class="hero-title" id="h-t">TER<em>RA</em></h1>
+    <p class="hero-sub" id="h-s">Un viaje a través de los últimos paisajes salvajes</p>
+  </div>
+  <div class="scroll-ind" id="h-ind">
+    <span>Desplaza</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ══ INTRO ══ -->
+<section class="intro">
+  <span class="section-label">Nuestra misión</span>
+  <p class="intro-text" id="intro-p">
+    El planeta respira en frecuencias que raramente escuchamos.
+    <em>Terra</em> es un archivo vivo de esos pulsos —
+    bosques que filtran la luz de formas imposibles,
+    océanos que guardan el tiempo en sus corrientes
+    y desiertos que revelan la eternidad en cada grano de arena.
+  </p>
+</section>
+
+<!-- ══ CHAPTER 1: FOREST ══ -->
+<div class="chapter-spacer" id="sp1">
+  <section class="sticky-ch">
+    <div class="img-frame" id="fr1">
+      <img src="https://images.unsplash.com/photo-1448375240586-882707db888b?w=2000&q=80" alt="Bosques primordiales" loading="eager">
+      <div class="img-overlay"></div>
+    </div>
+    <div class="ch-text" id="tx1">
+      <span class="ch-num">Capítulo 01</span>
+      <h2 class="ch-title">Los <em>bosques</em><br>primordiales</h2>
+      <p class="ch-desc">Donde el tiempo se mide en siglos y la luz desciende como agua entre las copas centenarias.</p>
+    </div>
+  </section>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══ CHAPTER 2: DESERT ══ -->
+<div class="chapter-spacer" id="sp2">
+  <section class="sticky-ch">
+    <div class="img-frame" id="fr2">
+      <img src="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=2000&q=80" alt="El desierto y su silencio" loading="eager">
+      <div class="img-overlay"></div>
+    </div>
+    <div class="ch-text" id="tx2">
+      <span class="ch-num">Capítulo 02</span>
+      <h2 class="ch-title">El <em>desierto</em><br>y su silencio</h2>
+      <p class="ch-desc">Vastas extensiones donde el calor distorsiona el horizonte y el tiempo pierde su forma habitual.</p>
+    </div>
+  </section>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══ CHAPTER 3: OCEAN ══ -->
+<div class="chapter-spacer" id="sp3">
+  <section class="sticky-ch">
+    <div class="img-frame" id="fr3">
+      <img src="https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=2000&q=80" alt="Profundidades del océano" loading="eager">
+      <div class="img-overlay"></div>
+    </div>
+    <div class="ch-text" id="tx3">
+      <span class="ch-num">Capítulo 03</span>
+      <h2 class="ch-title">Profundidades<br>del <em>océano</em></h2>
+      <p class="ch-desc">El 95% del océano permanece inexplorado. Sus aguas guardan más historia que cualquier biblioteca.</p>
+    </div>
+  </section>
+</div>
+
+<!-- ══ STATS ══ -->
+<section class="stats">
+  <div class="stat">
+    <div class="stat-n" id="s1">0</div>
+    <p class="stat-l">Expediciones completadas</p>
+  </div>
+  <div class="stat">
+    <div class="stat-n" id="s2">0</div>
+    <p class="stat-l">Países documentados</p>
+  </div>
+  <div class="stat">
+    <div class="stat-n" id="s3">0</div>
+    <p class="stat-l">Fotografías en archivo</p>
+  </div>
+</section>
+
+<!-- ══ OUTRO ══ -->
+<section class="outro">
+  <div class="outro-bg" id="outro-bg"></div>
+  <div class="outro-overlay"></div>
+  <div class="outro-inner" id="outro-inner">
+    <span class="section-label">Únete a la exploración</span>
+    <h2 class="outro-title">El mundo<br><em>te espera</em></h2>
+    <a href="#" class="cta">Ver expediciones →</a>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="f-logo">Terra</div>
+  <p>© 2025 Terra Expediciones. Todos los derechos reservados.</p>
+</footer>
+
+<!-- ══ GSAP ══ -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+const mobile = window.matchMedia('(max-width: 768px)').matches;
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ── SCROLL PROGRESS BAR ── */
+ScrollTrigger.create({
+  trigger: document.documentElement,
+  start: 'top top',
+  end: 'bottom bottom',
+  onUpdate: self => {
+    document.getElementById('prog').style.width = (self.progress * 100) + '%';
+  }
+});
+
+/* ── CUSTOM CURSOR ── */
+if (!mobile) {
+  const dot  = document.getElementById('c-dot');
+  const ring = document.getElementById('c-ring');
+
+  document.addEventListener('mousemove', e => {
+    gsap.to(dot,  { x: e.clientX, y: e.clientY, duration: 0.06, ease: 'none' });
+    gsap.to(ring, { x: e.clientX, y: e.clientY, duration: 0.55, ease: 'power3.out' });
+  });
+
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => gsap.to(ring, { scale: 2.4, opacity: 0.35, duration: 0.3 }));
+    el.addEventListener('mouseleave', () => gsap.to(ring, { scale: 1,   opacity: 1,    duration: 0.3 }));
+  });
+} else {
+  document.getElementById('c-dot').style.display  = 'none';
+  document.getElementById('c-ring').style.display = 'none';
+  document.body.style.cursor = 'auto';
+}
+
+/* ── NAV GLASS ON SCROLL ── */
+window.addEventListener('scroll', () => {
+  const p = Math.min(window.scrollY / 130, 1);
+  const nav = document.getElementById('main-nav');
+  nav.style.background = `rgba(8,8,8,${p * 0.82})`;
+  nav.style.backdropFilter = `blur(${p * 14}px)`;
+}, { passive: true });
+
+/* ── HERO ENTRANCE ── */
+if (!reduced) {
+  gsap.set(['#h-ey','#h-t','#h-s','#h-ind'], { opacity: 0 });
+  gsap.set('#h-t', { y: 50 });
+  gsap.set('#h-ey', { y: 18 });
+
+  const heroTl = gsap.timeline({ delay: 0.25 });
+  heroTl
+    .to('#h-ey', { opacity: 1, y: 0, duration: 1.1, ease: 'power3.out' })
+    .to('#h-t',  { opacity: 1, y: 0, duration: 1.4, ease: 'power3.out' }, '-=0.75')
+    .to('#h-s',  { opacity: 1, duration: 1,          ease: 'power2.out' }, '-=0.7')
+    .to('#h-ind',{ opacity: 1, duration: 0.8,         ease: 'power2.out' }, '-=0.4');
+}
+
+/* ── HERO PARALLAX ── */
+gsap.to('#hero-bg', {
+  yPercent: 28,
+  ease: 'none',
+  scrollTrigger: {
+    trigger: '.hero',
+    start: 'top top',
+    end: 'bottom top',
+    scrub: true,
+  }
+});
+
+/* ── INTRO REVEAL ── */
+gsap.from('#intro-p', {
+  opacity: 0, y: 55,
+  duration: 1.3,
+  ease: 'power3.out',
+  scrollTrigger: {
+    trigger: '.intro',
+    start: 'top 74%',
+    toggleActions: 'play none none none',
+  }
+});
+
+/* ─────────────────────────────────────────
+   KEY EFFECT: CLIP-PATH IMAGE EXPANSION
+   Each image starts as a contained card
+   (via clip-path inset) and smoothly opens
+   to fill the full viewport as you scroll.
+───────────────────────────────────────── */
+
+const CLIP_IN  = mobile
+  ? 'inset(8% 6% 8% 6% round 10px)'
+  : 'inset(10% 16% 10% 16% round 16px)';
+const CLIP_OUT = 'inset(0% 0% 0% 0% round 0px)';
+
+const chapters = [
+  { spacer: '#sp1', frame: '#fr1', img: '#fr1 img', text: '#tx1' },
+  { spacer: '#sp2', frame: '#fr2', img: '#fr2 img', text: '#tx2' },
+  { spacer: '#sp3', frame: '#fr3', img: '#fr3 img', text: '#tx3' },
+];
+
+chapters.forEach(({ spacer, frame, img, text }) => {
+  /* Set initial states */
+  gsap.set(frame, { clipPath: CLIP_IN });
+  gsap.set(img,   { scale: 1.18 });
+  gsap.set(text,  { opacity: 0, y: 22 });
+
+  /* Scrubbed timeline — drives all animations off the same scroll position */
+  const tl = gsap.timeline({
+    scrollTrigger: {
+      trigger: spacer,
+      start: 'top top',
+      end: 'bottom bottom',   /* = 150vh of scroll for a 250vh spacer */
+      scrub: 1.8,
+    }
+  });
+
+  /* 1 — clip-path opens (full duration) */
+  tl.to(frame, { clipPath: CLIP_OUT, ease: 'none', duration: 1 }, 0);
+
+  /* 2 — inner image zoom-out parallax (full duration) */
+  tl.to(img, { scale: 1, ease: 'none', duration: 1 }, 0);
+
+  /* 3 — text fades IN in first 14% of scroll */
+  tl.to(text, { opacity: 1, y: 0, ease: 'none', duration: 0.14 }, 0);
+
+  /* 4 — text holds, then fades OUT after 48% */
+  tl.to(text, { opacity: 0, y: -12, ease: 'none', duration: 0.2 }, 0.48);
+});
+
+/* ── STATS COUNT-UP ── */
+[
+  { id: '#s1', target: 147 },
+  { id: '#s2', target: 38  },
+  { id: '#s3', target: 12000 },
+].forEach(({ id, target }) => {
+  const el = document.querySelector(id);
+  const obj = { n: 0 };
+  gsap.to(obj, {
+    n: target,
+    duration: 2.4,
+    ease: 'power2.out',
+    snap: { n: 1 },
+    onUpdate: () => { el.textContent = obj.n.toLocaleString('es'); },
+    scrollTrigger: {
+      trigger: el,
+      start: 'top 84%',
+      toggleActions: 'play none none none',
+    }
+  });
+});
+
+/* ── OUTRO PARALLAX + ENTRANCE ── */
+gsap.to('#outro-bg', {
+  yPercent: 22,
+  ease: 'none',
+  scrollTrigger: {
+    trigger: '.outro',
+    start: 'top bottom',
+    end: 'bottom top',
+    scrub: true,
+  }
+});
+
+gsap.from('#outro-inner > *', {
+  opacity: 0, y: 48,
+  stagger: 0.14,
+  duration: 1.1,
+  ease: 'power3.out',
+  scrollTrigger: {
+    trigger: '.outro',
+    start: 'top 64%',
+    toggleActions: 'play none none none',
+  }
+});
+</script>
+</body>
+</html>
